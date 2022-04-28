@@ -193,9 +193,18 @@ async function doBuildFromScratch(
     const workingDir = core.getInput(Inputs.WORKDIR);
     const envs = getInputList(Inputs.ENVS);
 
-    const container = await cli.from(baseImage);
-    const containerId = container.output.replace("\n", "");
+    const inputExtraArgsStr = core.getInput(Inputs.EXTRA_ARGS);
+    let buildahFromExtraArgs: string[] = [];
+    if (inputExtraArgsStr) {
+        // transform the array of lines into an array of arguments
+        // by splitting over lines, then over spaces, then trimming.
+        const lines = splitByNewline(inputExtraArgsStr);
+        buildahFromExtraArgs = lines.flatMap((line) => line.split(" ")).map((arg) => arg.trim());
+    }
 
+    const container = await cli.from(baseImage, buildahFromExtraArgs);
+    const containerId = container.output.replace("\n", "");
+    
     const builtImage = [];
     if (archs.length > 0) {
         for (const arch of archs) {
